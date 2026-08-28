@@ -19,11 +19,28 @@
       color: #f0f0f5;
       font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      gap: 4.5vh;
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6em;
+    }
+
+    .section-title {
+      font-size: clamp(11px, 2.4vw, 15px);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.45;
+      font-weight: 400;
     }
 
     .timer {
@@ -33,27 +50,26 @@
       align-items: center;
       gap: 0;
       max-width: 96vw;
-      padding: 0 12px;
+      padding: 0 10px;
       text-align: center;
       font-weight: 200;
       letter-spacing: 0.5px;
       line-height: 1.25;
       text-shadow: 0 0 18px rgba(120, 160, 255, 0.35),
                    0 0 40px rgba(80, 120, 255, 0.15);
-      animation: softPulse 6s ease-in-out infinite;
     }
 
     .unit-block {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
-      min-width: 3.8em;
-      padding: 0 0.55em;
+      min-width: 3.6em;
+      padding: 0 0.5em;
     }
 
     .separator {
       width: 1.5px;
-      height: 2.6em;
+      height: 2.5em;
       background: linear-gradient(
         to bottom,
         transparent 0%,
@@ -61,7 +77,7 @@
         rgba(160, 190, 255, 0.45) 80%,
         transparent 100%
       );
-      margin: 0 0.15em;
+      margin: 0 0.1em;
       align-self: center;
       opacity: 0.7;
     }
@@ -70,84 +86,99 @@
       font-weight: 300;
       font-variant-numeric: tabular-nums;
       color: #e8f0ff;
-      font-size: clamp(42px, 11vw, 92px);
+      font-size: clamp(36px, 9.5vw, 78px);
     }
 
     .label {
-      font-size: clamp(11px, 2.8vw, 18px);
+      font-size: clamp(10px, 2.4vw, 15px);
       font-weight: 400;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       opacity: 0.55;
-      margin-top: 0.15em;
+      margin-top: 0.12em;
     }
 
     /* Landscape */
     @media (orientation: landscape) {
+      body {
+        gap: 6vh;
+      }
       .number {
-        font-size: clamp(36px, 8.5vw, 84px);
+        font-size: clamp(32px, 7.5vw, 68px);
       }
       .label {
-        font-size: clamp(10px, 2.2vw, 16px);
+        font-size: clamp(9px, 1.9vw, 14px);
       }
       .separator {
-        height: 2.3em;
+        height: 2.2em;
+      }
+      .section-title {
+        font-size: clamp(10px, 1.8vw, 13px);
       }
     }
 
     /* Portrait */
     @media (orientation: portrait) {
+      body {
+        gap: 5.5vh;
+      }
       .number {
-        font-size: clamp(48px, 13vw, 96px);
+        font-size: clamp(40px, 11vw, 82px);
       }
       .label {
-        font-size: clamp(12px, 3.2vw, 18px);
+        font-size: clamp(11px, 2.8vw, 16px);
       }
       .separator {
-        height: 2.8em;
+        height: 2.6em;
       }
     }
 
     /* Very narrow */
     @media (max-width: 380px) {
       .unit-block {
-        min-width: 3.2em;
-        padding: 0 0.4em;
+        min-width: 3.1em;
+        padding: 0 0.35em;
       }
       .separator {
-        height: 2.4em;
+        height: 2.3em;
         margin: 0 0.05em;
       }
     }
 
     @keyframes softPulse {
       0%, 100% { opacity: 0.92; transform: scale(1); }
-      50%      { opacity: 1;    transform: scale(1.01); }
+      50%      { opacity: 1;    transform: scale(1.008); }
+    }
+    .timer {
+      animation: softPulse 6s ease-in-out infinite;
     }
   </style>
 </head>
 <body>
-  <div class="timer" id="timer"></div>
+
+  <!-- Count-up from 2026 -->
+  <div class="section">
+    <div class="section-title">Since 1 May 2026</div>
+    <div class="timer" id="timer2026"></div>
+  </div>
+
+  <!-- Countdown / Count-up to/from 2035 -->
+  <div class="section">
+    <div class="section-title" id="title2035">Until 1 May 2035</div>
+    <div class="timer" id="timer2035"></div>
+  </div>
 
   <script>
-    // Fixed start: 22:45 on 1 May 2026 Thailand time (ICT = UTC+7)
-    const START = new Date('2026-05-01T22:45:00+07:00').getTime();
+    // Fixed Thai time (ICT = UTC+7). JS Date handles leap years correctly.
+    const START_2026 = new Date('2026-05-01T22:45:00+07:00').getTime();
+    const TARGET_2035 = new Date('2035-05-01T22:45:00+07:00').getTime();
 
     function plural(n, singular, plural) {
       return n === 1 ? singular : plural;
     }
 
-    function update() {
-      const now = Date.now();
-      let diff = Math.max(0, now - START);
-
-      const totalSeconds = Math.floor(diff / 1000);
-      const days    = Math.floor(totalSeconds / 86400);
-      const hours   = Math.floor((totalSeconds % 86400) / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-
-      document.getElementById('timer').innerHTML = `
+    function buildHTML(days, hours, minutes, seconds) {
+      return `
         <div class="unit-block">
           <div class="number">${days}</div>
           <div class="label">${plural(days, 'day', 'days')}</div>
@@ -168,6 +199,39 @@
           <div class="label">${plural(seconds, 'second', 'seconds')}</div>
         </div>
       `;
+    }
+
+    function getParts(ms) {
+      const totalSeconds = Math.floor(Math.abs(ms) / 1000);
+      const days    = Math.floor(totalSeconds / 86400);
+      const hours   = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return { days, hours, minutes, seconds };
+    }
+
+    function update() {
+      const now = Date.now();
+
+      // === 2026 count-up (always positive) ===
+      const elapsed2026 = Math.max(0, now - START_2026);
+      const p2026 = getParts(elapsed2026);
+      document.getElementById('timer2026').innerHTML =
+        buildHTML(p2026.days, p2026.hours, p2026.minutes, p2026.seconds);
+
+      // === 2035 countdown / count-up ===
+      const diff2035 = TARGET_2035 - now;
+      const p2035 = getParts(diff2035);
+
+      const titleEl = document.getElementById('title2035');
+      if (diff2035 > 0) {
+        titleEl.textContent = 'Until 1 May 2035';
+      } else {
+        titleEl.textContent = 'Since 1 May 2035';
+      }
+
+      document.getElementById('timer2035').innerHTML =
+        buildHTML(p2035.days, p2035.hours, p2035.minutes, p2035.seconds);
     }
 
     update();
