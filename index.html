@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Time Counter</title>
+
+  <!-- Firebase SDK (compat for simple HTML) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body {
       width: 100%;
@@ -57,6 +59,7 @@
       line-height: 1.25;
       text-shadow: 0 0 18px rgba(120, 160, 255, 0.35),
                    0 0 40px rgba(80, 120, 255, 0.15);
+      animation: softPulse 6s ease-in-out infinite;
     }
 
     .unit-block {
@@ -70,13 +73,7 @@
     .separator {
       width: 1.5px;
       height: 2.8em;
-      background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgba(160, 190, 255, 0.45) 20%,
-        rgba(160, 190, 255, 0.45) 80%,
-        transparent 100%
-      );
+      background: linear-gradient(to bottom, transparent 0%, rgba(160,190,255,0.45) 20%, rgba(160,190,255,0.45) 80%, transparent 100%);
       margin: 0 0.15em;
       align-self: center;
       opacity: 0.7;
@@ -98,59 +95,123 @@
       margin-top: 0.15em;
     }
 
-    /* Landscape */
+    /* ===== Bottom-right panel ===== */
+    .bottom-right {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: rgba(10, 12, 20, 0.82);
+      border: 1px solid rgba(160, 190, 255, 0.18);
+      border-radius: 14px;
+      padding: 14px 16px;
+      min-width: 220px;
+      max-width: 280px;
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .bottom-right .days10 {
+      font-size: 18px;
+      font-weight: 300;
+      color: #c8d8ff;
+      margin-bottom: 8px;
+    }
+
+    .bottom-right .custom-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .bottom-right input[type="number"],
+    .bottom-right input[type="email"],
+    .bottom-right input[type="password"] {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(160,190,255,0.25);
+      border-radius: 6px;
+      color: #e8f0ff;
+      padding: 6px 8px;
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+    }
+
+    .bottom-right input[type="number"] {
+      width: 90px;
+    }
+
+    .bottom-right button {
+      background: rgba(100, 140, 255, 0.25);
+      border: 1px solid rgba(140, 180, 255, 0.4);
+      color: #e0eaff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bottom-right button:hover {
+      background: rgba(100, 140, 255, 0.4);
+    }
+
+    .bottom-right .auth-box {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(160,190,255,0.15);
+    }
+
+    .bottom-right .auth-box input {
+      margin-bottom: 6px;
+    }
+
+    .bottom-right .auth-buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .bottom-right .status {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 6px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Responsive */
     @media (orientation: landscape) {
-      body {
-        gap: 5.5vh;
-      }
-      .number {
-        font-size: clamp(42px, 9vw, 86px);
-      }
-      .label {
-        font-size: clamp(11px, 2.2vw, 16px);
-      }
-      .separator {
-        height: 2.5em;
-      }
-      .section-title {
-        font-size: clamp(12px, 2vw, 16px);
-      }
+      body { gap: 5.5vh; }
+      .number { font-size: clamp(42px, 9vw, 86px); }
+      .label { font-size: clamp(11px, 2.2vw, 16px); }
+      .separator { height: 2.5em; }
+      .section-title { font-size: clamp(12px, 2vw, 16px); }
     }
 
-    /* Portrait */
     @media (orientation: portrait) {
-      body {
-        gap: 5vh;
-      }
-      .number {
-        font-size: clamp(52px, 13.5vw, 102px);
-      }
-      .label {
-        font-size: clamp(13px, 3.2vw, 19px);
-      }
-      .separator {
-        height: 3em;
+      body { gap: 5vh; }
+      .number { font-size: clamp(52px, 13.5vw, 102px); }
+      .label { font-size: clamp(13px, 3.2vw, 19px); }
+      .separator { height: 3em; }
+      .bottom-right {
+        right: 12px;
+        bottom: 12px;
+        min-width: 200px;
+        padding: 12px;
       }
     }
 
-    /* Very narrow */
     @media (max-width: 380px) {
-      .unit-block {
-        min-width: 3.4em;
-        padding: 0 0.4em;
-      }
-      .separator {
-        height: 2.6em;
-        margin: 0 0.08em;
-      }
+      .unit-block { min-width: 3.4em; padding: 0 0.4em; }
+      .separator { height: 2.6em; }
     }
 
     @keyframes softPulse {
       0%, 100% { opacity: 0.92; transform: scale(1); }
-      50%      { opacity: 1;    transform: scale(1.008); }
-    }
-    .timer {
-      animation: softPulse 6s ease-in-out infinite;
+      50%      { opacity: 1; transform: scale(1.008); }
     }
   </style>
 </head>
@@ -168,74 +229,168 @@
     <div class="timer" id="timer2035"></div>
   </div>
 
+  <!-- ===== Bottom-right panel ===== -->
+  <div class="bottom-right">
+    <div class="days10">Days × 10: <span id="days10">—</span></div>
+
+    <div class="custom-row">
+      <input type="number" id="customAmount" placeholder="Custom" disabled>
+      <button id="saveBtn" disabled>Save</button>
+    </div>
+
+    <!-- Not logged in -->
+    <div class="auth-box" id="authBox">
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <div class="auth-buttons">
+        <button id="signInBtn">Sign In</button>
+        <button id="signUpBtn">Sign Up</button>
+      </div>
+      <div class="status" id="authStatus"></div>
+    </div>
+
+    <!-- Logged in -->
+    <div class="auth-box hidden" id="loggedBox">
+      <div class="status" id="userEmail"></div>
+      <button id="logoutBtn" style="margin-top:6px;width:100%">Log out</button>
+    </div>
+  </div>
+
   <script>
-    // Fixed Thai time (ICT = UTC+7). JS Date handles leap years correctly.
-    const START_2026 = new Date('2026-05-01T22:45:00+07:00').getTime();
+    // ========== REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ==========
+    const firebaseConfig = {
+    apiKey: "AIzaSyDMKdFTiF4Xk6NqgUK1voRgnVnVO8ECXHY",
+    authDomain: "date-count-of-my-love.firebaseapp.com",
+    databaseURL: "https://date-count-of-my-love-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "date-count-of-my-love",
+    storageBucket: "date-count-of-my-love.firebasestorage.app",
+    messagingSenderId: "368211375044",
+    appId: "1:368211375044:web:1d785cb73c0965f5442a91",
+    measurementId: "G-5NR3W6VMCF"
+  };
+    // =================================================================
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.database();
+
+    // Fixed Thai time
+    const START_2026  = new Date('2026-05-01T22:45:00+07:00').getTime();
     const TARGET_2035 = new Date('2035-05-01T22:45:00+07:00').getTime();
 
-    function plural(n, singular, plural) {
-      return n === 1 ? singular : plural;
-    }
+    function plural(n, s, p) { return n === 1 ? s : p; }
 
-    function buildHTML(days, hours, minutes, seconds) {
+    function buildHTML(d, h, m, s) {
       return `
-        <div class="unit-block">
-          <div class="number">${days}</div>
-          <div class="label">${plural(days, 'day', 'days')}</div>
-        </div>
+        <div class="unit-block"><div class="number">${d}</div><div class="label">${plural(d,'day','days')}</div></div>
         <div class="separator"></div>
-        <div class="unit-block">
-          <div class="number">${hours}</div>
-          <div class="label">${plural(hours, 'hour', 'hours')}</div>
-        </div>
+        <div class="unit-block"><div class="number">${h}</div><div class="label">${plural(h,'hour','hours')}</div></div>
         <div class="separator"></div>
-        <div class="unit-block">
-          <div class="number">${minutes}</div>
-          <div class="label">${plural(minutes, 'minute', 'minutes')}</div>
-        </div>
+        <div class="unit-block"><div class="number">${m}</div><div class="label">${plural(m,'minute','minutes')}</div></div>
         <div class="separator"></div>
-        <div class="unit-block">
-          <div class="number">${seconds}</div>
-          <div class="label">${plural(seconds, 'second', 'seconds')}</div>
-        </div>
+        <div class="unit-block"><div class="number">${s}</div><div class="label">${plural(s,'second','seconds')}</div></div>
       `;
     }
 
     function getParts(ms) {
-      const totalSeconds = Math.floor(Math.abs(ms) / 1000);
-      const days    = Math.floor(totalSeconds / 86400);
-      const hours   = Math.floor((totalSeconds % 86400) / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return { days, hours, minutes, seconds };
+      const total = Math.floor(Math.abs(ms) / 1000);
+      return {
+        days:    Math.floor(total / 86400),
+        hours:   Math.floor((total % 86400) / 3600),
+        minutes: Math.floor((total % 3600) / 60),
+        seconds: total % 60
+      };
     }
 
     function update() {
       const now = Date.now();
 
-      // === 2026 count-up (always positive) ===
-      const elapsed2026 = Math.max(0, now - START_2026);
-      const p2026 = getParts(elapsed2026);
-      document.getElementById('timer2026').innerHTML =
-        buildHTML(p2026.days, p2026.hours, p2026.minutes, p2026.seconds);
+      // 2026 count-up
+      const e2026 = Math.max(0, now - START_2026);
+      const p1 = getParts(e2026);
+      document.getElementById('timer2026').innerHTML = buildHTML(p1.days, p1.hours, p1.minutes, p1.seconds);
 
-      // === 2035 countdown / count-up ===
-      const diff2035 = TARGET_2035 - now;
-      const p2035 = getParts(diff2035);
+      // Days × 10
+      document.getElementById('days10').textContent = p1.days * 10;
 
-      const titleEl = document.getElementById('title2035');
-      if (diff2035 > 0) {
-        titleEl.textContent = 'Until 1 May 2035';
-      } else {
-        titleEl.textContent = 'Since 1 May 2035';
-      }
-
-      document.getElementById('timer2035').innerHTML =
-        buildHTML(p2035.days, p2035.hours, p2035.minutes, p2035.seconds);
+      // 2035
+      const diff = TARGET_2035 - now;
+      const p2 = getParts(diff);
+      document.getElementById('title2035').textContent = diff > 0 ? 'Until 1 May 2035' : 'Since 1 May 2035';
+      document.getElementById('timer2035').innerHTML = buildHTML(p2.days, p2.hours, p2.minutes, p2.seconds);
     }
 
     update();
     setInterval(update, 1000);
+
+    // ===== Auth + Custom amount =====
+    const customInput = document.getElementById('customAmount');
+    const saveBtn     = document.getElementById('saveBtn');
+    const authBox     = document.getElementById('authBox');
+    const loggedBox   = document.getElementById('loggedBox');
+    const authStatus  = document.getElementById('authStatus');
+    const userEmailEl = document.getElementById('userEmail');
+
+    let currentUid = null;
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUid = user.uid;
+        authBox.classList.add('hidden');
+        loggedBox.classList.remove('hidden');
+        userEmailEl.textContent = user.email;
+        customInput.disabled = false;
+        saveBtn.disabled = false;
+
+        // Load custom amount
+        db.ref('users/' + user.uid + '/customAmount').once('value')
+          .then(snap => {
+            if (snap.exists()) customInput.value = snap.val();
+          });
+      } else {
+        currentUid = null;
+        authBox.classList.remove('hidden');
+        loggedBox.classList.add('hidden');
+        customInput.disabled = true;
+        saveBtn.disabled = true;
+        customInput.value = '';
+      }
+    });
+
+    // Sign Up
+    document.getElementById('signUpBtn').onclick = () => {
+      const email = document.getElementById('email').value.trim();
+      const pass  = document.getElementById('password').value;
+      authStatus.textContent = 'Creating account...';
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(() => authStatus.textContent = 'Account created!')
+        .catch(e => authStatus.textContent = e.message);
+    };
+
+    // Sign In
+    document.getElementById('signInBtn').onclick = () => {
+      const email = document.getElementById('email').value.trim();
+      const pass  = document.getElementById('password').value;
+      authStatus.textContent = 'Signing in...';
+      auth.signInWithEmailAndPassword(email, pass)
+        .then(() => authStatus.textContent = '')
+        .catch(e => authStatus.textContent = e.message);
+    };
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = () => auth.signOut();
+
+    // Save custom amount
+    saveBtn.onclick = () => {
+      if (!currentUid) return;
+      const val = Number(customInput.value) || 0;
+      db.ref('users/' + currentUid + '/customAmount').set(val)
+        .then(() => {
+          authStatus.textContent = 'Saved!';
+          setTimeout(() => authStatus.textContent = '', 1500);
+        })
+        .catch(e => authStatus.textContent = e.message);
+    };
   </script>
 </body>
 </html>
